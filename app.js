@@ -1,5 +1,9 @@
-// Importar el módulo 'fs' (FileSystem)
+// Importar el módulo 'fs' (FileSystem) // Express // PUERTO 8080
+const express = require('express');
 const fs = require('fs');
+const app = express();
+const PUERTO = 8080;
+
 
 // Clase Product (lo uso como receta para crear productos)
 class Product {
@@ -14,7 +18,7 @@ class Product {
     }
 }
 
-// Clase ProductManager (ente organizador y quien maneja los productos)
+// Clase ProductManager (ente organiza Y maneja los productos)
 class ProductManager {
     // Propiedades que comparten todos los ProductManagers
     static nextProductId = 1;
@@ -69,10 +73,10 @@ class ProductManager {
 
     // Método para buscar un producto por su ID o codigo
     getProductById(identifier) {
-        // El identificador debe ser un número
+        // El identificador debe ser un nuumero
         const productId = parseInt(identifier);
 
-        // Se busca  el producto por su ID o código
+        // Se busca  el producto por su ID o codigo
         const product = this.products.find(
             product => product.id === productId || product.code === identifier
         );
@@ -147,7 +151,7 @@ class ProductManager {
     // Método privado para guardar la información en el archivo
     saveToFile() {
         try {
-            fs.writeFileSync(this.path, JSON.stringify(this.products, null, 2), 'utf-8'); //llevado a formato array
+            fs.writeFileSync(this.path, JSON.stringify(this.products, null, 2), 'utf-8'); //llevado a formato legible*//
             console.log('Productos guardados en el archivo.');
         } catch (error) {
             console.error('Error al guardar productos en el archivo:', error.message);
@@ -187,23 +191,73 @@ ProductManager.nextProductId = 1;
 const filePath = 'productos.json';
 
 // Instancia de ProductManager con la ruta del archivo
-const productManager = new ProductManager(filePath);
+const productManager = new ProductManager('productos.json');
+
+
+// Endpoint para obtener todos los productos
+app.get('/products', async (req, res) => {
+    try {
+        const limit = req.query.limit ? parseInt(req.query.limit) : undefined;
+        const products = await productManager.getAllProducts();
+        
+        // limite
+        const limitedProducts = limit ? products.slice(0, limit) : products;
+
+        const responseJSON = JSON.stringify({ products: limitedProducts }, null, 2); // agregué formato legible.
+        res.setHeader('Content-Type', 'application/json');
+        res.send(responseJSON);
+    } catch (error) {
+        console.error('Error al obtener productos:', error.message);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint para obtener un producto por su ID, en el servidor para obetner un ID especifico
+app.get('/products/:pid', async (req, res) => {
+    try {
+        const productId = parseInt(req.params.pid);
+        const product = await productManager.getProductById(productId);
+
+        if (product) {
+            const responseJSON = JSON.stringify({ product }, null, 2);
+            res.setHeader('Content-Type', 'application/json');
+            res.send(responseJSON);
+        } else {
+            res.status(404).json({ error: 'Product not found' });
+        }
+    } catch (error) {
+        console.error('Error al obtener producto por ID:', error.message);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 
 // productos de ejemplo utilizando el método addProduct
-productManager.addProduct('Perfume de Perros', 'Perfume Oh My Dog', 21.50, 'thumbnail1.jpg', 'code1', 10);
-productManager.addProduct('Shampoo de Perros', 'Shampoo de perros pelo risado', 17.50, 'thumbnail2.jpg', 'code2', 30);
-productManager.addProduct('Correa', 'Correa multicolor', 9, 'thumbnail2.jpg', 'code3', 20);
-productManager.addProduct('Alimento Balanceado', 'Alimento Balanceado 5kg cordero', 14, 'thumbnail2.jpg', 'code4', 5);
+productManager.addProduct('Perfume de Perros', 'Perfume Oh My Dog', 21.50, 'imagen.jpg', 'code1', 10);
+productManager.addProduct('Shampoo de Perros', 'Shampoo de perros pelo risado', 17.50, 'imagen.jpg', 'code2', 30);
+productManager.addProduct('Correa', 'Correa multicolor', 9, 'imagen.jpg', 'code3', 20);
+productManager.addProduct('Alimento Balanceado', 'Alimento Balanceado 5kg cordero', 14, 'imagen.jpg', 'code4', 5);
+productManager.addProduct('Cámara de vigilancia', 'Cámara de vigilancia inteligente WIFI', 95.50, 'imagen.jpg', 'code5', 3);
+productManager.addProduct('Transportadora Canil', 'Transportadora Canil de Polipropileno y acero', 55, 'imagen.jpg', 'code6', 8);
+productManager.addProduct('Shampoo Snilove', 'Shampoo Snilove para cachorros', 15.50, 'imagen.jpg', 'code7', 25);
+productManager.addProduct('Purina Sensitive', 'Purina Sensitive Skin and Stomach', 17, 'imagen.jpg', 'code8', 10);
+productManager.addProduct('Set de entrenamiento', 'Set de entrenamiento Smylepets 3 piezas', 45.50, 'imagen.jpg', 'code9', 10);
+productManager.addProduct('Bolso transportador', 'Bolso transportador portatil para viajes', 35, 'imagen.jpg', 'code10', 9);
+
 
 // Para obetener todos los productos
 console.log(productManager.getAllProducts());
 
+// Iniciar el servidor
+app.listen(PUERTO, () => {
+    console.log(`Servidor escuchando en el puerto ${PUERTO}`);
+});
 
 
-/////////TESTING/////////TESTING/////////TESTING/////////TESTING/////////TESTING/////////TESTING
+// ///////TESTING/////////TESTING/////////TESTING/////////TESTING/////////TESTING/////////TESTING
 
 
-// //DESAFIO 1:
+// //Tarea 1:
 
 // // Instancia de la clase ProductManager:
 // const manager = new ProductManager(filePath);
@@ -224,37 +278,53 @@ console.log(productManager.getAllProducts());
 
 
 
-// DESAFIO 2:
+// //Tarea 2:
 
-// Creo una instancia de la clase "ProductManager"
-const manager = new ProductManager('productos.json');
+// // Creo una instancia de la clase "ProductManager"
+// const manager = new ProductManager('productos.json');
 
-// Llamo al método "getProducts" después de crear la instancia
-const initialProducts = manager.getProducts();
-console.log('Productos cargados desde el archivo:', initialProducts);
+// // Llamo al método "getProducts" después de crear la instancia
+// const initialProducts = manager.getProducts();
+// console.log('Productos cargados desde el archivo:', initialProducts);
 
-// 3. Llamo al método "addProduct" con los campos especificados
-manager.addProduct('Producto de Prueba', 'Este es un producto de prueba', 200, 'Sin imagen', 'abc123', 25);
+// // 3. Llamo al método "addProduct" con los campos especificados
+// manager.addProduct('Producto de Prueba', 'Este es un producto de prueba', 200, 'Sin imagen', 'abc123', 25);
 
-// 4. Llamo al método "getProducts" nuevamente
-const updatedProducts = manager.getProducts();
-console.log('Lista de productos actualizada:', updatedProducts);
+// // 4. Llamo al método "getProducts" nuevamente
+// const updatedProducts = manager.getProducts();
+// console.log('Lista de productos actualizada:', updatedProducts);
 
-// 5. Llamo al método "getProductById" y corroboro su funcionamiento
-try {
-const productIdToFind = updatedProducts[8].id; // Usamos el ID de un producto que no exista.
-const foundProduct = manager.getProductById(productIdToFind - 1);
-} catch (error) {
-console.error('Producto no encontrado con ID informado:', error.message);
-}
+// // 5. Llamo al método "getProductById" y corroboro su funcionamiento
+// try {
+// const productIdToFind = updatedProducts[8].id; // Usamos el ID de un producto que no exista.
+// const foundProduct = manager.getProductById(productIdToFind - 1);
+// } catch (error) {
+// console.error('Producto no encontrado con ID informado:', error.message);
+// }
 
-// 6. Llamo al método "updateProduct" e intento cambiar un campo de algún producto
-const productIdToUpdate = 1; // Aquí el ID del producto que quiero actualizar.
-const updatedProduct = manager.updateProduct(productIdToUpdate, {
-price: 150,
-stock: 5,
-id: 10
-});
+// // 6. Llamo al método "updateProduct" e intento cambiar un campo de algún producto
+// const productIdToUpdate = 1; // Aquí el ID del producto que quiero actualizar.
+// const updatedProduct = manager.updateProduct(productIdToUpdate, {
+// price: 150,
+// stock: 5,
+// id: 10
+// });
 
-// 7. Llamo al método "deleteProduct" para eliminar un producto
-manager.deleteProduct(2);
+// // 7. Llamo al método "deleteProduct" para eliminar un producto
+// manager.deleteProduct(2);
+
+
+
+
+
+
+//Tarea 3
+
+// Se instalarán las dependencias a partir del comando npm install. COMPLETADO
+// Se echará a andar el servidor. COMPLETADO
+// Se revisará que el archivo YA CUENTE CON AL MENOS DIEZ PRODUCTOS CREADOS al momento de su entrega, es importante para que los tutores no tengan que crear los productos por sí mismos, y así agilizar el proceso de tu evaluación. COMPLETADO
+// Se corroborará que el servidor esté corriendo en el puerto 8080. COMPLETADO
+// Se mandará a llamar desde el navegador a la url http://localhost:8080/products sin query, eso debe devolver todos los 10 productos. OK
+// Se mandará a llamar desde el navegador a la url http://localhost:8080/products?limit=5 , eso debe devolver sólo los primeros 5 de los 10 productos. OK
+// Se mandará a llamar desde el navegador a la url http://localhost:8080/products/2, eso debe devolver sólo el producto con id=2. OK
+// Se mandará a llamar desde el navegador a la url http://localhost:8080/products/34123123, al no existir el id del producto, debe devolver un objeto con un error indicando que el producto no existe. OK
